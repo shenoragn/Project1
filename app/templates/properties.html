@@ -4,36 +4,44 @@
 
 {% block main %}
 <h1>Properties</h1>
-{% if properties|length > 0 %}
-    <div class="propertyImage">
+<section id = "prop">
+<div class = "row">
+    {% if properties|length > 0 %}
         {% for proprty in properties %}
-        <div class="group">
-            <div class = "img">
-                <img src="{{ url_for('get_image', filename = proprty.upload) }}"/>
-            </div>
-
-            <div class="info">
-                <span class="title">{{ proprty.propertyTitle}}</span>
-                <span class="cdate"><b>Property Added On: </b>{{ proprty.date_created }}</span>
-                <span class="location"><i class="glyphicon glyphicon-map-marker"></i> {{proprty.location}}</span>
-                <div class="price">
-                    <span> ${{ proprty.price}}</span> <br/>
+        <div class = "col-sm-4">
+            <div class = "card viewCard">
+                <img class = "card-img-top" src="{{ url_for('get_image', filename = proprty.upload) }}" alt = "Card image cap">
+                <div class = "card-body">
+                    <h2 class = "card-text"> {{proprty.propertyTitle}}</h2>
+                    <div class = "card-text text-muted">
+                        <a href = "#" style = "text-decoration: none;">
+                            <i class = "fa fa-map-marker card-text" id="map-icon"></i>
+                            <span id = "map-location">{{proprty.location}}</span>
+                        </a>
+                    </div>
+                    <div class = "card-text text-muted">
+                        <a href = "#" style = "text-decoration: none;">
+                            <i class = "fa fa-map-marker card-text" id="map-icon"></i>
+                            <span id = "cdate"><b>Property Added On: </b>{{proprty.date_created}}</span>
+                        </a>
+                    </div>
+                    <a href = "#" class = "btn btn-primary"  id = "PriceBtn" style = "letter-spacing: 0.1em;">{{proprty.price }}</a>
                 </div>
-                <br/>
-                <a href="{{ url_for('get_property', propertyID = proprty.id) }}">
+                   <a href = "{{ url_for('getProperty', propertyID = proprty.propertyID) }}" class = "btn btn-primary text-decoration">
                     <span class="view">View Property</span>
-                </a>
+                   </a>
             </div>
         </div>
+</div>
         {% endfor %}
+</section>
         <br/>
-    </div>
 {% else %}
     <div class ="propertyimagemessage">
         <h4>No Properties Uploaded yet. Upload a Property to start viewing</h4>
 
     </div>
-
+</div>
 {% endif %}
 
 {% endblock %}

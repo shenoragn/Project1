@@ -10,7 +10,9 @@ from app import app, db
 from flask import render_template, request, redirect, url_for, flash
 from flask import session, abort, send_from_directory, jsonify, make_response
 from werkzeug.utils import secure_filename
-from app.forms import ContactForm
+from fileinput import filename
+from app.config import Config
+from app.forms import PropertyForm
 from app.models import propertyInfo 
 
 conn = psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
@@ -34,66 +36,54 @@ def about():
 def newProperty():
     """Render's the website's Property form"""
     # instatiate form class
-    form = form()
-
+    form = PropertyForm()
     # validate file upload on submit
-    if request.method =='POST' and form.validate_on_submit():
+    if request.method =="POST":
+        if form.validate_on_submit():
+            # getting form data
+            propertyTitle = form.propertyTitle.data
+            description = form.description.data
+            no_rooms = form.no_rooms.data
+            no_bathrooms = form.no_bathrooms.data
+            price = form.price.data
+            propertyType = form.propertyType.data
+            location = form.location.data
 
-        # getting form data
-        propertyTitle = form.propertyTitle.data
-        description = form.description.data
-        no_rooms = form.no_rooms.data
-        no_bathrooms = form.no_bathrooms.data
-        price = form.price.data
-        propertyType = form.propertyType.data
-        location = form.location.data
+            # retrieve and save photo of property to uploads folder
+            userfile = request.files['upload']
+            filename = secure_filename(userfile.filename)
+            userfile.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-        # retrieve and save photo of property to uploads folder
-        userfile = request.files['upload']
-        filename = secure_filename(userfile.filename)
-        userfile.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            # generate date created
+            date_created = datetime.date.today()
 
-        # retrieve and save photo of property
-        userfile = request.files['upload']
-        filename = secure_filename(userfile.filename)
-        userfile.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            # database entry 
+            newProperty = propertyInfo(propertyTitle = propertyTitle, description = description, no_rooms = no_rooms, 
+            no_bathrooms = no_bathrooms, price = price, propertyType = propertyType, location = location, upload = filename,  
+            date_created = date_created)
 
-        # generate propertyID and date created
-        propertyID = genID(propertyTitle, filename)
-        date_created = datetime.date.today()
+            #add entry to database and commit changes
+            db.session.add(newProperty)
+            db.session.commit()
 
-        # database entry 
-        newProperty = propertyInfo(propertyID = propertyID, propertyTitle = propertyTitle, description = description, no_rooms = no_rooms, 
-        no_bathrooms = no_bathrooms, price = price, propertyType = propertyType, location = location, upload = filename,  
-        date_created = date_created)
+            # flash message
+            flash ('Property uploaded sucessfully', 'success')
+            return redirect(url_for('properties'))
 
-        #add entry to database and commit changes
-        db.session.add(newProperty)
-        db.session.commit()
-
-        # flash message
-        flash ('Property uploaded sucessfully', 'success')
-        return redirect(url_for('properties'))
-
-        # flash error message
-        flash_errors(form)
-        """renders the website's newProperty page."""
+            # flash error message
+            flash_errors(form)
+            """renders the website's newProperty page."""
+    print(form.errors)
     return render_template('newProperty.html', form = form)
+    
 
-# route for displaying a file's url
-@app.route('/uploads/<filename>')
-def genID(propertyTitle, filename):
-    id = []
-    for x in propertyTitle:
-        id.append(str(ord(x)))
-    for x in filename:
-        id.append(str(ord(x)))
-    random.shuffle(id)
-    res = ''.join(id)
-    return int(res[:5])
+@app.route("/uploads/<filename>")
+def get_image(filename):
+    rootdir = os.getcwd()
+    return send_from_directory(rootdir + "/" + app.config['UPLOAD_FOLDER'], filename)
 
 # route for displaying all properties
-@app.route('/properties/', methods =["GET", "POST"])
+@app.route('/properties/', methods =["POST", "GET"])
 def properties():
     properties = propertyInfo.query.all()
     if request.method == "GET":
