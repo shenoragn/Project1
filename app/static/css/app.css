@@ -117,8 +117,8 @@ form{
 }
 
 /*All Properties for properties.html*/
-#prop {
-    grid-template-columns: repeat(3, 1fr);
+.card {
+    display: grid;
 }
 
 /*Individual Property for viewproperty.html*/
